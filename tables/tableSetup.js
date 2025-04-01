@@ -1,0 +1,87 @@
+import { database } from "../db/config.js";
+
+const clientTable = `CREATE TABLE IF NOT EXISTS clients (
+    id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    contact VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    gstnum VARCHAR(255),
+    address TEXT NOT NULL
+);
+`;
+
+const vendorTable = `CREATE TABLE IF NOT EXISTS vendors (
+    id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    contact VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    gstnum VARCHAR(255) 
+)`;
+
+const supportingDataTable = `CREATE TABLE IF NOT EXISTS supportingData(
+    id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    value JSON NOT NULL
+)`;
+
+const masterTable = `CREATE TABLE IF NOT EXISTS masterTable (
+    id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
+    entryCreatedOn TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(255) NOT NULL,
+    invoiceNum VARCHAR(255) NOT NULL,
+    dateofBooking DATETIME  NOT NULL,
+    dateOfJourney DATETIME  NOT NULL,
+    modeOfPayment VARCHAR(255) NOT NULL,
+    service VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    PNR VARCHAR(255) NOT NULL,
+    systemRef VARCHAR(255) NOT NULL,
+    vendor VARCHAR(255) NOT NULL,
+    vendorGST VARCHAR(255) NOT NULL,
+    depCity VARCHAR(255) NOT NULL,
+    arrCity VARCHAR(255) NOT NULL,
+    passengerName VARCHAR(255) NOT NULL,
+    paymentParty VARCHAR(255) NOT NULL,
+    paymentPartyGST VARCHAR(255) NOT NULL,
+    netAmount DECIMAL(10,2) NOT NULL,
+    markup DECIMAL(10,2) NOT NULL,
+    gst DECIMAL(10,2) NOT NULL,
+    totalAmount DECIMAL(10,2) NOT NULL,
+    modeOfPaymentForClient DECIMAL(10,2) NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    refundDate DATETIME NOT NULL,
+    refundAmount DECIMAL(10,2) NOT NULL,
+    cancelCharge DECIMAL(10,2) NOT NULL,
+    refundMode VARCHAR(255) NOT NULL
+)`;
+
+
+const userTable = `CREATE TABLE IF NOT EXISTS user (
+    id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL ,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)`;
+
+// tables
+const tableSetup = async (table, query) => {
+    try {
+      await database.query(query);
+  
+      console.log(`${table} created`);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const createTables = async () => {
+    await tableSetup("clients", clientTable);
+    await tableSetup("vendors", vendorTable);
+    await tableSetup("supportingData", supportingDataTable);
+    await tableSetup("masterTable", masterTable);
+    await tableSetup("user", userTable);
+    console.log("Tables created");
+  };
+
+  export {createTables};
