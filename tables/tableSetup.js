@@ -56,13 +56,17 @@ const masterTable = `CREATE TABLE IF NOT EXISTS masterTable (
 )`;
 
 
-const userTable = `CREATE TABLE IF NOT EXISTS user (
-    id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL ,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+const userTable = `CREATE TABLE IF NOT EXISTS users (
+  id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  otp_code VARCHAR(6),
+  otp_expires_at TIMESTAMP,
+  is_verified BOOLEAN DEFAULT FALSE,
+  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )`;
+
 
 // tables
 const tableSetup = async (table, query) => {

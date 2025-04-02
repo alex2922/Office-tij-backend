@@ -2,11 +2,16 @@ import { database } from "../db/config.js";
 import Joi from "joi";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { generateOTP } from "./otpService.js";
+import { sentOTP } from "./emailService.js";
 
 const userTableSchema = Joi.object({
     name: Joi.string().required(),
     email: Joi.string().email().required(),
     password: Joi.string().min(6).required(), // Ensuring password security
+    otp_code: Joi.string().length(6).optional(),
+    otp_expires_at: Joi.date().optional(),
+    is_verified: Joi.boolean().default(false),
     createdAt: Joi.date().default(() => new Date()),
 });
 
@@ -18,28 +23,59 @@ export const registerUser = async (userData) => {
 
         // Check if user exists
         const [existingUser] = await database.query(
-            "SELECT id FROM user WHERE email = ?",
+            "SELECT id FROM users WHERE email = ?",
             [userData.email]
         );
         if (existingUser.length > 0) throw new Error("User already exists");
 
         // Hash password securely
-        const salt = await bcrypt.genSalt(12);
+        const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(userData.password, salt);
 
-        // Insert user into database
+        // Generate OTP
+        const otp = await generateOTP(userData.email);
+
+        // Insert user into database with OTP
         const [result] = await database.query(
-            "INSERT INTO user (name, email, password) VALUES (?, ?, ?)",
-            [userData.name, userData.email, hashedPassword]
+            "INSERT INTO users (name, email, password, otp_code, otp_expires_at, is_verified) VALUES (?, ?, ?, ?, ?, ?)",
+            [userData.name, userData.email, hashedPassword, otp, new Date(Date.now() + 10 * 60 * 1000), false]
         );
+
+        // Send OTP via email
+        await sentOTP(userData.email, otp);
 
         return {
             id: result.insertId,
             name: userData.name,
             email: userData.email,
+            message: "Registration successful. Please verify your email with the OTP sent."
         };
     } catch (error) {
         throw new Error(`User registration failed: ${error.message}`);
+    }
+};
+
+// Verify OTP for registration
+export const verifyRegistrationOTP = async (email, otp) => {
+    try {
+        const [users] = await database.query(
+            "SELECT * FROM users WHERE email = ? AND otp_code = ? AND otp_expires_at > NOW()",
+            [email, otp]
+        );
+
+        if (users.length === 0) {
+            throw new Error("Invalid or expired OTP");
+        }
+
+        // Update user verification status
+        await database.query(
+            "UPDATE users SET is_verified = true, otp_code = NULL, otp_expires_at = NULL WHERE email = ?",
+            [email]
+        );
+
+        return { message: "Email verified successfully" };
+    } catch (error) {
+        throw new Error(`OTP verification failed: ${error.message}`);
     }
 };
 
@@ -47,10 +83,15 @@ export const registerUser = async (userData) => {
 export const loginUser = async (email, password) => {
     try {
         // Find user by email
-        const [users] = await database.query("SELECT * FROM user WHERE email = ?", [email]);
+        const [users] = await database.query("SELECT * FROM users WHERE email = ?", [email]);
         if (users.length === 0) throw new Error("Invalid email or password");
 
         const user = users[0];
+
+        // Check if email is verified
+        if (!user.is_verified) {
+            throw new Error("Please verify your email before logging in");
+        }
 
         // Verify password
         const validPassword = await bcrypt.compare(password, user.password);
@@ -76,56 +117,66 @@ export const loginUser = async (email, password) => {
     }
 };
 
-// Get user by ID
-export const getUserById = async (userId) => {
+// Forgot password - send OTP
+export const forgotPassword = async (email) => {
     try {
+        // Check if user exists
         const [users] = await database.query(
-            "SELECT id, name, email, createdAt FROM user WHERE id = ?",
-            [userId]
+            "SELECT id FROM users WHERE email = ?",
+            [email]
         );
-        if (users.length === 0) throw new Error("User not found");
-        return users[0];
-    } catch (error) {
-        throw new Error(`User retrieval failed: ${error.message}`);
-    }
-};
-
-// Update user (with secure query)
-export const updateUser = async (userId, updateData) => {
-    try {
-        if (updateData.password) {
-            const salt = await bcrypt.genSalt(12);
-            updateData.password = await bcrypt.hash(updateData.password, salt);
+        if (users.length === 0) {
+            throw new Error("User not found");
         }
 
-        const allowedUpdates = ["name", "email", "password"];
-        const updates = Object.keys(updateData)
-            .filter((key) => allowedUpdates.includes(key))
-            .map((key) => `${key} = ?`)
-            .join(", ");
+        // Generate OTP
+        const otp = await generateOTP(email);
 
-        if (!updates) throw new Error("No valid fields to update");
+        // Update user with new OTP
+        await database.query(
+            "UPDATE users SET otp_code = ?, otp_expires_at = ? WHERE email = ?",
+            [otp, new Date(Date.now() + 10 * 60 * 1000), email]
+        );
 
-        const values = Object.keys(updateData)
-            .filter((key) => allowedUpdates.includes(key))
-            .map((key) => updateData[key]);
+        // Send OTP via email
+        await sentOTP(email, otp);
 
-        values.push(userId);
-
-        await database.query(`UPDATE user SET ${updates} WHERE id = ?`, values);
-        return await getUserById(userId);
+        return { message: "Password reset OTP sent to your email" };
     } catch (error) {
-        throw new Error(`User update failed: ${error.message}`);
+        throw new Error(`Forgot password failed: ${error.message}`);
     }
 };
 
-// Delete user
-export const deleteUser = async (userId) => {
+// Reset password with OTP
+export const resetPassword = async (email, otp, newPassword) => {
     try {
-        const [result] = await database.query("DELETE FROM user WHERE id = ?", [userId]);
-        if (result.affectedRows === 0) throw new Error("User not found");
-        return { message: "User deleted successfully" };
+        // Validate new password
+        if (!newPassword || newPassword.length < 6) {
+            throw new Error("New password must be at least 6 characters long");
+        }
+
+        // Verify OTP
+        const [users] = await database.query(
+            "SELECT * FROM users WHERE email = ? AND otp_code = ? AND otp_expires_at > NOW()",
+            [email, otp]
+        );
+
+        if (users.length === 0) {
+            throw new Error("Invalid or expired OTP");
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        // Update password and clear OTP
+        await database.query(
+            "UPDATE users SET password = ?, otp_code = NULL, otp_expires_at = NULL WHERE email = ?",
+            [hashedPassword, email]
+        );
+
+        return { message: "Password reset successfully" };
     } catch (error) {
-        throw new Error(`User deletion failed: ${error.message}`);
+        throw new Error(`Password reset failed: ${error.message}`);
     }
 };

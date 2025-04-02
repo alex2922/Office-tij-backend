@@ -1,4 +1,4 @@
-import { database } from "../db/config.js";
+import { pool } from '../config/database.js';
 import Joi from "joi"; // Validation library
 
 // ✅ Define a schema for validation
@@ -34,59 +34,60 @@ const masterTableSchema = Joi.object({
 // ✅ Service function to add a master table entry
 export const addMasterTableService = async (data) => {
     try {
-        // ✅ Validate input data
-        const { error, value } = masterTableSchema.validate(data);
-        if (error) {
-            throw new Error(`Validation Error: ${error.details.map(d => d.message).join(', ')}`);
-        }
-
-        // ✅ SQL Query
-        const query = `INSERT INTO masterTable (
-            status, invoiceNum, dateofBooking, dateOfJourney, modeOfPayment, service,
-            description, PNR, systemRef, vendor, vendorGST, depCity, arrCity, passengerName, 
-            paymentParty, paymentPartyGST, netAmount, markup, gst, totalAmount, 
-            modeOfPaymentForClient, amount, refundDate, refundAmount, cancelCharge, refundMode
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-
-        // ✅ Extract values safely
-        const values = [
-            value.status, value.invoiceNum, value.dateofBooking, value.dateOfJourney,
-            value.modeOfPayment, value.service, value.description, value.PNR, value.systemRef,
-            value.vendor, value.vendorGST, value.depCity, value.arrCity, value.passengerName,
-            value.paymentParty, value.paymentPartyGST, value.netAmount, value.markup, value.gst,
-            value.totalAmount, value.modeOfPaymentForClient, value.amount, value.refundDate,
-            value.refundAmount, value.cancelCharge, value.refundMode
-        ];
-
-        // ✅ Execute Query
-        const [result] = await database.query(query, values);
-
+        const { name, code, description, parentId, isActive, metadata } = data;
+        
+        const query = `
+            INSERT INTO master_table (name, code, description, parent_id, is_active, metadata)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING *
+        `;
+        
+        const values = [name, code, description, parentId, isActive, metadata];
+        const result = await pool.query(query, values);
+        
         return {
             success: true,
-            message: "Master table entry added successfully",
-            data: { id: result.insertId }
+            data: result.rows[0],
+            message: "Master table entry added successfully"
         };
     } catch (error) {
         console.error("Error in addMasterTableService:", error);
         return {
             success: false,
-            message: "Master table entry addition failed",
+            message: "Failed to add master table entry",
             error: error.message
         };
     }
 };
 
-
-
-export const getAllMasterTableService = async () => {
+// Get all master table entries
+export const getAllMasterTableService = async (type = null, parentId = null) => {
     try {
-        const query = `SELECT * FROM masterTable ORDER BY dateofBooking DESC`;
-        const [results] = await database.query(query);
+        let query = "SELECT * FROM master_table";
+        let values = [];
+        let conditions = [];
+        
+        if (type) {
+            conditions.push("type = $" + (values.length + 1));
+            values.push(type);
+        }
+        
+        if (parentId) {
+            conditions.push("parent_id = $" + (values.length + 1));
+            values.push(parentId);
+        }
+        
+        if (conditions.length > 0) {
+            query += " WHERE " + conditions.join(" AND ");
+        }
+        
+        query += " ORDER BY name ASC";
+        const result = await pool.query(query, values);
         
         return {
             success: true,
-            message: "Master table entries retrieved successfully",
-            data: results
+            data: result.rows,
+            message: "Master table entries retrieved successfully"
         };
     } catch (error) {
         console.error("Error in getAllMasterTableService:", error);
@@ -98,23 +99,23 @@ export const getAllMasterTableService = async () => {
     }
 };
 
-
+// Get master table entry by ID
 export const getMasterTableByIdService = async (id) => {
     try {
-        const query = `SELECT * FROM masterTable WHERE id = ?`;
-        const [results] = await database.query(query, [id]);
+        const query = "SELECT * FROM master_table WHERE id = $1";
+        const result = await pool.query(query, [id]);
         
-        if (results.length === 0) {
+        if (result.rows.length === 0) {
             return {
                 success: false,
                 message: "Master table entry not found"
             };
         }
-
+        
         return {
             success: true,
-            message: "Master table entry retrieved successfully",
-            data: results[0]
+            data: result.rows[0],
+            message: "Master table entry retrieved successfully"
         };
     } catch (error) {
         console.error("Error in getMasterTableByIdService:", error);
@@ -126,48 +127,33 @@ export const getMasterTableByIdService = async (id) => {
     }
 };
 
-
+// Update master table entry
 export const updateMasterTableService = async (id, data) => {
     try {
-        // Validate input data
-        const { error, value } = masterTableSchema.validate(data);
-        if (error) {
-            throw new Error(`Validation Error: ${error.details.map(d => d.message).join(', ')}`);
-        }
-
-        const query = `UPDATE masterTable SET 
-            status = ?, invoiceNum = ?, dateofBooking = ?, dateOfJourney = ?, 
-            modeOfPayment = ?, service = ?, description = ?, PNR = ?, 
-            systemRef = ?, vendor = ?, vendorGST = ?, depCity = ?, 
-            arrCity = ?, passengerName = ?, paymentParty = ?, paymentPartyGST = ?, 
-            netAmount = ?, markup = ?, gst = ?, totalAmount = ?, 
-            modeOfPaymentForClient = ?, amount = ?, refundDate = ?, 
-            refundAmount = ?, cancelCharge = ?, refundMode = ?
-            WHERE id = ?`;
-
-        const values = [
-            value.status, value.invoiceNum, value.dateofBooking, value.dateOfJourney,
-            value.modeOfPayment, value.service, value.description, value.PNR, 
-            value.systemRef, value.vendor, value.vendorGST, value.depCity, 
-            value.arrCity, value.passengerName, value.paymentParty, value.paymentPartyGST,
-            value.netAmount, value.markup, value.gst, value.totalAmount,
-            value.modeOfPaymentForClient, value.amount, value.refundDate,
-            value.refundAmount, value.cancelCharge, value.refundMode, id
-        ];
-
-        const [result] = await database.query(query, values);
-
-        if (result.affectedRows === 0) {
+        const { name, code, description, parentId, isActive, metadata } = data;
+        
+        const query = `
+            UPDATE master_table 
+            SET name = $1, code = $2, description = $3, parent_id = $4, 
+                is_active = $5, metadata = $6, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $7
+            RETURNING *
+        `;
+        
+        const values = [name, code, description, parentId, isActive, metadata, id];
+        const result = await pool.query(query, values);
+        
+        if (result.rows.length === 0) {
             return {
                 success: false,
                 message: "Master table entry not found"
             };
         }
-
+        
         return {
             success: true,
-            message: "Master table entry updated successfully",
-            data: { id }
+            data: result.rows[0],
+            message: "Master table entry updated successfully"
         };
     } catch (error) {
         console.error("Error in updateMasterTableService:", error);
@@ -179,23 +165,34 @@ export const updateMasterTableService = async (id, data) => {
     }
 };
 
-
+// Delete master table entry
 export const deleteMasterTableService = async (id) => {
     try {
-        const query = `DELETE FROM masterTable WHERE id = ?`;
-        const [result] = await database.query(query, [id]);
-
-        if (result.affectedRows === 0) {
+        // First check if there are any child entries
+        const checkQuery = "SELECT COUNT(*) FROM master_table WHERE parent_id = $1";
+        const checkResult = await pool.query(checkQuery, [id]);
+        
+        if (checkResult.rows[0].count > 0) {
+            return {
+                success: false,
+                message: "Cannot delete master table entry with child entries"
+            };
+        }
+        
+        const query = "DELETE FROM master_table WHERE id = $1 RETURNING *";
+        const result = await pool.query(query, [id]);
+        
+        if (result.rows.length === 0) {
             return {
                 success: false,
                 message: "Master table entry not found"
             };
         }
-
+        
         return {
             success: true,
-            message: "Master table entry deleted successfully",
-            data: { id }
+            data: result.rows[0],
+            message: "Master table entry deleted successfully"
         };
     } catch (error) {
         console.error("Error in deleteMasterTableService:", error);
@@ -222,12 +219,12 @@ export const getFilteredMasterTableService = async (filters) => {
 
         query += ` ORDER BY dateofBooking DESC`;
 
-        const [results] = await database.query(query, values);
+        const [results] = await pool.query(query, values);
 
         return {
             success: true,
             message: "Filtered master table entries retrieved successfully",
-            data: results
+            data: results.rows
         };
     } catch (error) {
         console.error("Error in getFilteredMasterTableService:", error);

@@ -2,11 +2,12 @@ import { database } from "../db/config.js";
 import Joi from "joi";
 
 const vendorTableSchema = Joi.object({
-    name: Joi.string().required(),
-    email: Joi.string().email().required(),
-    contact: Joi.string().required(),
-    gstnum: Joi.string().optional(),
+    name: Joi.string().trim().min(3).max(50).required(),
+    email: Joi.string().email().trim().required(),
+    contact: Joi.string().pattern(/^[0-9]+$/).min(10).max(15).required(),
+    gstnum: Joi.string().trim().min(1).max(15).optional(), 
 });
+
 
 export const addVendorService = async (data) => {
     try {
@@ -79,49 +80,58 @@ export const getVendorByIdService = async (id) => {
 
 export const updateVendorService = async (id, data) => {
     try {
-        const {error, value} = vendorTableSchema.validate(data);
-        if(error){
+        const { error, value } = vendorTableSchema.validate(data);
+        if (error) {
             throw new Error(`Validation Error: ${error.details.map(d => d.message).join(', ')}`);
         }
+
         const query = `UPDATE vendors SET name = ?, email = ?, contact = ?, gstnum = ? WHERE id = ?`;
         const values = [value.name, value.email, value.contact, value.gstnum, id];
         const [results] = await database.query(query, values);
-        if(results.affectedRows === 0){
-            throw new Error("Vendor not found");
+
+        if (results.affectedRows === 0) {
+            return {
+                success: false,
+                message: "Vendor not found or no changes made",
+            };
         }
+
         return {
             success: true,
             message: "Vendor updated successfully",
-            data: {id: results.insertId}
-        }
+        };
     } catch (error) {
         console.error("Error in updateVendorService:", error);
         return {
             success: false,
-            message: "Failed to update vendor",
-            error: error.message
-        }
+            message: error.message || "Failed to update vendor",
+        };
     }
-}
+};
+
 
 export const deleteVendorService = async (id) => {
     try {
         const query = `DELETE FROM vendors WHERE id = ?`;
         const [results] = await database.query(query, [id]);
-        if(results.affectedRows === 0){
-            throw new Error("Vendor not found");
+
+        if (results.affectedRows === 0) {
+            return {
+                success: false,
+                message: "Vendor not found",
+            };
         }
+
         return {
             success: true,
             message: "Vendor deleted successfully",
-            data: {id: results.insertId}
-        }
+        };
     } catch (error) {
         console.error("Error in deleteVendorService:", error);
         return {
             success: false,
-            message: "Failed to delete vendor",
-            error: error.message
-        }
+            message: error.message || "Failed to delete vendor",
+        };
     }
-}
+};
+
