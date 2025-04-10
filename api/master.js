@@ -44,12 +44,12 @@ master.post("/add", async (req, res) => {
       !service ||
       !systemRef ||
       !vendor ||
-      !vendorGST ||
+     
       !passengerName ||
       !paymentParty ||
       !netAmount ||
       !markup ||
-      !gst ||
+     
       !totalAmount ||
       !modeOfPaymentForClient ||
       !amount
@@ -85,7 +85,7 @@ master.post("/add", async (req, res) => {
       refundDate,
       refundAmount,
       cancelCharge,
-      refundMode) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      refundMode) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [status,
         invoiceNum,
         dateofBooking,
