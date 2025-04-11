@@ -44,12 +44,10 @@ master.post("/add", async (req, res) => {
       !service ||
       !systemRef ||
       !vendor ||
-     
       !passengerName ||
       !paymentParty ||
       !netAmount ||
       !markup ||
-     
       !totalAmount ||
       !modeOfPaymentForClient ||
       !amount
@@ -86,7 +84,8 @@ master.post("/add", async (req, res) => {
       refundAmount,
       cancelCharge,
       refundMode) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-      [status,
+      [
+        status,
         invoiceNum,
         dateofBooking,
         dateOfJourney,
@@ -111,7 +110,8 @@ master.post("/add", async (req, res) => {
         refundDate,
         refundAmount,
         cancelCharge,
-        refundMode]
+        refundMode,
+      ]
     );
 
     return res.status(201).json({
@@ -162,5 +162,153 @@ master.get("/getmasterDataById", async (req, res) => {
     return res.status(500).json({
       message: error.message,
     });
+  }
+});
+
+master.put("/editMasterData", async (req, res) => {
+  try {
+    const { masterId } = req.query;
+    const {
+      status,
+      invoiceNum,
+      dateofBooking,
+      dateOfJourney,
+      modeOfPayment,
+      service,
+      description,
+      PNR,
+      systemRef,
+      vendor,
+      vendorGST,
+      depCity,
+      arrCity,
+      passengerName,
+      paymentParty,
+      paymentPartyGST,
+      netAmount,
+      markup,
+      gst,
+      totalAmount,
+      modeOfPaymentForClient,
+      amount,
+      refundDate,
+      refundAmount,
+      cancelCharge,
+      refundMode,
+    } = req.body;
+
+    if (masterId) {
+      return res.status(401).json({
+        message: "masterId is required",
+      });
+    }
+
+    if (
+      !status ||
+      !dateofBooking ||
+      !invoiceNum ||
+      !dateOfJourney ||
+      !dateofBooking ||
+      !modeOfPayment ||
+      !service ||
+      !systemRef ||
+      !vendor ||
+      !passengerName ||
+      !paymentParty ||
+      !netAmount ||
+      !markup ||
+      !totalAmount ||
+      !modeOfPaymentForClient ||
+      !amount
+    ) {
+      return res.status(401).json({
+        message: "all fileds are required",
+      });
+    }
+
+    const response = await database.query(
+      `UPDATE masterTable SET status=?,
+      invoiceNum=?,
+      dateofBooking=?,
+      dateOfJourney=?,
+      modeOfPayment=?,
+      service=?,
+      description=?,
+      PNR=?,
+      systemRef=?,
+      vendor=?,
+      vendorGST=?,
+      depCity=?,
+      arrCity=?,
+      passengerName=?,
+      paymentParty=?,
+      paymentPartyGST=?,
+      netAmount=?,
+      markup=?,
+      gst=?,
+      totalAmount=?,
+      modeOfPaymentForClient=?,
+      amount=?,
+      refundDate=?,
+      refundAmount=?,
+      cancelCharge=?,
+      refundMode=? WHERE id=?`,
+      [
+        status,
+        invoiceNum,
+        dateofBooking,
+        dateOfJourney,
+        modeOfPayment,
+        service,
+        description,
+        PNR,
+        systemRef,
+        vendor,
+        vendorGST,
+        depCity,
+        arrCity,
+        passengerName,
+        paymentParty,
+        paymentPartyGST,
+        netAmount,
+        markup,
+        gst,
+        totalAmount,
+        modeOfPaymentForClient,
+        amount,
+        refundDate,
+        refundAmount,
+        cancelCharge,
+        refundMode,
+        masterId,
+      ]
+    );
+
+    return res.status(201).json({
+      message: "master data updated successfully",
+      data: response[0],
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
+});
+
+master.delete("/deleteMasterData", async (req, res) => {
+  try {
+    const { masterId } = req.query;
+
+    const [response] = await database.query(
+      `DELETE FROM masterTable WHERE id =?`,
+      [masterId]
+    );
+    return res.status(201).json({
+           message:"deleted successfully",
+    })
+  } catch (error) {
+    return res.status(500).json({
+      message:error.message
+    })
   }
 });
