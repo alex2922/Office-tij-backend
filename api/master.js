@@ -51,7 +51,6 @@ master.post("/add", async (req, res) => {
       !netAmount ||
       !markup ||
       !totalAmount ||
-
       !amount
     ) {
       return res.status(401).json({
@@ -145,31 +144,6 @@ master.get("/getAllMasterData", async (req, res) => {
   }
 });
 
-master.get("/getmasterDataById", async (req, res) => {
-  try {
-    const { masterId } = req.query;
-
-    if (!masterId) {
-      return res.status(401).json({
-        message: "clientId is required",
-      });
-    }
-
-    const [response] = await database.query(
-      `SELECT * FROM masterTable WHERE id=?`,
-      [masterId]
-    );
-
-    return res.status(200).json({
-      message: "success",
-      data: response[0],
-    });
-  } catch (error) {
-    return res.status(500).json({
-      message: error.message,
-    });
-  }
-});
 
 master.put("/editMasterData", async (req, res) => {
   try {
@@ -315,11 +289,43 @@ master.delete("/deleteMasterData", async (req, res) => {
       [masterId]
     );
     return res.status(201).json({
-           message:"deleted successfully",
-    })
+      message: "deleted successfully",
+    });
   } catch (error) {
     return res.status(500).json({
-      message:error.message
-    })
+      message: error.message,
+    });
+  }
+});
+
+master.get("/getmasterDatabyid", async (req, res) => {
+  try {
+    const { masterId } = req.query;
+
+    if (!masterId) {
+      return res.status(401).json({
+        message: "masterId is required",
+      });
+    }
+
+    const [response] = await database.query(
+      `SELECT * FROM masterTable WHERE id=?`,
+      [masterId]
+    );
+
+    if (response.length === 0) {
+      return res.status(401).json({
+        message: "master data not found",
+      });
+    }
+
+    return res.status(201).json({
+      message: "success",
+      data: response[0],
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+    });
   }
 });
