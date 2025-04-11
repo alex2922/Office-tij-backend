@@ -132,3 +132,33 @@ supportingData.put("/update", async (req, res) => {
     }
 });
 
+
+supportingData.delete("/delete", async (req, res) => {
+    try {
+        const { id } = req.query;
+        if (!id) {
+            return res.status(401).json({
+                message: "id is required"
+            });
+        }
+
+        const [response] = await database.query(
+            `DELETE FROM supportingData WHERE id = ?`,
+            [id]
+        );
+
+        if (response.affectedRows === 0) {
+            return res.status(404).json({
+                message: "supporting data not found"
+            });
+        }
+
+        return res.status(200).json({
+            message: "supporting data deleted successfully",
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: error.message,
+        });
+    }
+});
