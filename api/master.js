@@ -197,7 +197,7 @@ master.put("/editMasterData", async (req, res) => {
       refundMode,
     } = req.body;
 
-    if (masterId) {
+    if (!masterId) {
       return res.status(401).json({
         message: "masterId is required",
       });
@@ -286,7 +286,7 @@ master.put("/editMasterData", async (req, res) => {
 
     return res.status(201).json({
       message: "master data updated successfully",
-      data: response[0],
+      // data: response[0],
     });
   } catch (error) {
     return res.status(500).json({
