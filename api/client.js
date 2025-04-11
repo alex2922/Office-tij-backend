@@ -54,7 +54,7 @@ client.get("/getClientById", async (req, res) => {
     }
 
     const [response] = await database.query(
-      `SELECT * FROM clients WHERE id=?`,
+      `SELECT * FROM clients WHERE name=?`,
       [clientId]
     );
 

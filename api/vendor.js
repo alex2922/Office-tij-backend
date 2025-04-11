@@ -54,7 +54,7 @@ vendor.get("/getvendorsById", async (req, res) => {
     }
 
     const [response] = await database.query(
-      `SELECT * FROM vendors WHERE id=?`,
+      `SELECT * FROM vendors WHERE name=?`,
       [vendorId]
     );
 
