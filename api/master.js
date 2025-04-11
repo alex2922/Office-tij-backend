@@ -27,6 +27,8 @@ master.post("/add", async (req, res) => {
       gst,
       totalAmount,
       modeOfPaymentForClient,
+      paymentdatebyclient,
+      paymenamtbyclient,
       amount,
       refundDate,
       refundAmount,
@@ -49,7 +51,7 @@ master.post("/add", async (req, res) => {
       !netAmount ||
       !markup ||
       !totalAmount ||
-      !modeOfPaymentForClient ||
+
       !amount
     ) {
       return res.status(401).json({
@@ -79,11 +81,13 @@ master.post("/add", async (req, res) => {
       gst,
       totalAmount,
       modeOfPaymentForClient,
+        paymentdatebyclient,
+      paymenamtbyclient,
       amount,
       refundDate,
       refundAmount,
       cancelCharge,
-      refundMode) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      refundMode) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         status,
         invoiceNum,
@@ -106,6 +110,8 @@ master.post("/add", async (req, res) => {
         gst,
         totalAmount,
         modeOfPaymentForClient,
+        paymentdatebyclient,
+        paymenamtbyclient,
         amount,
         refundDate,
         refundAmount,
@@ -190,6 +196,8 @@ master.put("/editMasterData", async (req, res) => {
       gst,
       totalAmount,
       modeOfPaymentForClient,
+      paymentdatebyclient,
+      paymenamtbyclient,
       amount,
       refundDate,
       refundAmount,
@@ -218,7 +226,6 @@ master.put("/editMasterData", async (req, res) => {
       !netAmount ||
       !markup ||
       !totalAmount ||
-      !modeOfPaymentForClient ||
       !amount
     ) {
       return res.status(401).json({
@@ -248,6 +255,8 @@ master.put("/editMasterData", async (req, res) => {
       gst=?,
       totalAmount=?,
       modeOfPaymentForClient=?,
+        paymentdatebyclient,
+      paymenamtbyclient,
       amount=?,
       refundDate=?,
       refundAmount=?,
@@ -275,6 +284,8 @@ master.put("/editMasterData", async (req, res) => {
         gst,
         totalAmount,
         modeOfPaymentForClient,
+        paymentdatebyclient,
+        paymenamtbyclient,
         amount,
         refundDate,
         refundAmount,
