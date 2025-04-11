@@ -74,8 +74,61 @@ supportingData.get("/getById", async (req, res) => {
 
 supportingData.get("/getByName" , async (req , res) => {
     try {
-        const {id} = req
+        const {name} = req.query;
+
+        if(!name){
+            return res.status(401).json({
+                message: "name is required"
+            })
+        }
+
+        const [response] = await database.query(`SELECT * FROM supportingData WHERE name=?`,[name]);
+
+
+        if(response.length === 0){
+            return res.status(404).json({
+                message: "supporting data not found"
+            })
+        }
+        return res.status(200).json({
+            message: "success",
+            data: response[0],
+        });
     } catch (error) {
-        
+        return res.status(500).json({
+            message: error.message,
+        })
     }
 })
+
+supportingData.put("/update", async (req, res) => {
+    try {
+        const { id, name, value } = req.body;
+
+        if (!id || !name || !value) {
+            return res.status(401).json({
+                message: "id, name, and value are required"
+            });
+        }
+
+        const [response] = await database.query(
+            `UPDATE supportingData SET name = ?, value = ? WHERE id = ?`,
+            [name, JSON.stringify(value), id]
+        );
+
+        if (response.affectedRows === 0) {
+            return res.status(404).json({
+                message: "supporting data not found"
+            });
+        }
+
+        return res.status(200).json({
+            message: "supporting data updated successfully",
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: error.message,
+        });
+    }
+});
+

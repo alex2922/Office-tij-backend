@@ -20,7 +20,7 @@ const vendorTable = `CREATE TABLE IF NOT EXISTS vendors (
 
 const supportingDataTable = `CREATE TABLE IF NOT EXISTS supportingData(
     id INT AUTO_INCREMENT NOT NULL PRIMARY KEY UNIQUE,
-    name VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL UNIQUE,
     value JSON NOT NULL
 )`;
 
