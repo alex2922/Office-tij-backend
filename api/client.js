@@ -68,3 +68,53 @@ client.get("/getClientById", async (req, res) => {
     });
   }
 });
+
+
+client.put("/updateClient", async (req, res) => {
+  try {
+    const { id } = req.query;
+    const { name, contact, email, gstnum,address } = req.body;
+
+    if (!id) {
+      return res.status(401).json({
+        message: "id is required",
+      });
+    }
+
+    await database.query(
+      `UPDATE clients SET name=?,contact=?,email=?,gstnum=?,address=? WHERE id=?`,
+      [name, contact, email, gstnum,address, id]
+    );
+
+    return res.status(201).json({
+      message:"cleints data updated successfully"
+    })
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
+});
+
+client.delete("/deletCleint", async (req,res)=>{
+  try {
+    const {clientId} = req.query;
+
+    if(!clientId){
+      return res.status(401).json({
+        message:"vendorid is requried"
+      })
+    }
+
+
+    await database.query(`DELETE FROM clients WHERE id =?`,[clientId]);
+
+    return res.status(201).json({
+      message:"delete successfully"
+    })
+  } catch (error) {
+    return res.status(500).json({
+      message:error.message
+    })
+  }
+})
