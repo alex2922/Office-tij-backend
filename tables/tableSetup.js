@@ -41,7 +41,7 @@ const masterTable = `CREATE TABLE IF NOT EXISTS masterTable (
     depCity VARCHAR(255),
     arrCity VARCHAR(255),
     passengerName VARCHAR(255) NOT NULL,
-    paymentParty VARCHAR(255) NOT NULL,
+    paymentParty VARCHAR(255),
     paymentPartyGST VARCHAR(255),
     netAmount DECIMAL(10,2) NOT NULL,
     markup DECIMAL(10,2) NOT NULL,

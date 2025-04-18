@@ -190,13 +190,12 @@ master.put("/editMasterData", async (req, res) => {
       !dateofBooking ||
       !invoiceNum ||
       !dateOfJourney ||
-      !dateofBooking ||
       !modeOfPayment ||
       !service ||
       !systemRef ||
       !vendor ||
       !passengerName ||
-      !paymentParty ||
+  
       !netAmount ||
       !markup ||
       !totalAmount ||
