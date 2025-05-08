@@ -189,13 +189,13 @@ master.post("/addInvoice", async (req,res)=>{
       !invoiceNum||
       !dateofBooking ||
       !dateOfJourney ||
-      !dateofBooking ||
+
       !modeOfPayment ||
       !service ||
       !systemRef ||
       !vendor ||
       !passengerName ||
-      !paymentParty ||
+     
       !netAmount ||
       !markup ||
       !totalAmount ||
