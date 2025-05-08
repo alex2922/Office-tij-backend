@@ -61,13 +61,13 @@ master.post("/add", async (req, res) => {
       !status ||
       !dateofBooking ||
       !dateOfJourney ||
-      !dateofBooking ||
+    
       !modeOfPayment ||
       !service ||
       !systemRef ||
       !vendor ||
       !passengerName ||
-      !paymentParty ||
+
       !netAmount ||
       !markup ||
       !totalAmount ||
