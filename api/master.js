@@ -503,7 +503,7 @@ master.post("/addDataviacsv", upload.single("fileData"), async (req, res) => {
           dateOfJourney: row["dateOfJourney"] || "",
           invoiceNum: row["invoiceNum"] || "",
           passengerName: row["passengerName"] || "",
-          paymentParty: row["paymenamtbyclient"] || "",
+          paymentParty: row["paymentParty"] || "",
 
           systemRef: row["systemRef"] || "",
           vendor: row["vendor"] || "",
