@@ -50,13 +50,12 @@ const masterTable = `CREATE TABLE IF NOT EXISTS masterTable (
     modeOfPaymentForClient DECIMAL(10,2) ,
     paymentdatebyclient VARCHAR(255),
     paymenamtbyclient DECIMAL(10,2) ,
-    amount DECIMAL(10,2) NOT NULL,
+    amount DECIMAL(10,2) DEFAULT 0,
     refundDate VARCHAR(255) ,
     refundAmount DECIMAL(10,2),
     cancelCharge DECIMAL(10,2) ,
     refundMode VARCHAR(255)
 )`;
-
 
 const userTable = `CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
@@ -65,25 +64,24 @@ const userTable = `CREATE TABLE IF NOT EXISTS users (
   createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )`;
 
-
 // tables
 const tableSetup = async (table, query) => {
-    try {
-      await database.query(query);
-  
-      console.log(`${table} created`);
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  try {
+    await database.query(query);
 
-  const createTables = async () => {
-    await tableSetup("clients", clientTable);
-    await tableSetup("vendors", vendorTable);
-    await tableSetup("supportingData", supportingDataTable);
-    await tableSetup("masterTable", masterTable);
-    await tableSetup("user", userTable);
-    console.log("Tables created");
-  };
+    console.log(`${table} created`);
+  } catch (error) {
+    console.log(error);
+  }
+};
 
-  export {createTables};
+const createTables = async () => {
+  await tableSetup("clients", clientTable);
+  await tableSetup("vendors", vendorTable);
+  await tableSetup("supportingData", supportingDataTable);
+  await tableSetup("masterTable", masterTable);
+  await tableSetup("user", userTable);
+  console.log("Tables created");
+};
+
+export { createTables };

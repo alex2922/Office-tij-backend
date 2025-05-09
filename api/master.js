@@ -1,6 +1,9 @@
 import express from "express";
 import { database } from "../db/config.js";
 import { invoiceNumber } from "../middleware/newInvoiceNum.js";
+import fs from "fs";
+import csv from "csv-parser";
+import upload from "../multer.js";
 
 export const master = express.Router();
 
@@ -61,13 +64,11 @@ master.post("/add", async (req, res) => {
       !status ||
       !dateofBooking ||
       !dateOfJourney ||
-    
       !modeOfPayment ||
       !service ||
       !systemRef ||
       !vendor ||
       !passengerName ||
-
       !netAmount ||
       !markup ||
       !totalAmount ||
@@ -149,10 +150,8 @@ master.post("/add", async (req, res) => {
   }
 });
 
-
-master.post("/addInvoice", async (req,res)=>{
+master.post("/addInvoice", async (req, res) => {
   try {
-
     const {
       status,
       invoiceNum,
@@ -186,16 +185,14 @@ master.post("/addInvoice", async (req,res)=>{
 
     if (
       !status ||
-      !invoiceNum||
+      !invoiceNum ||
       !dateofBooking ||
       !dateOfJourney ||
-
       !modeOfPayment ||
       !service ||
       !systemRef ||
       !vendor ||
       !passengerName ||
-     
       !netAmount ||
       !markup ||
       !totalAmount ||
@@ -275,19 +272,20 @@ master.post("/addInvoice", async (req,res)=>{
       message: error.message,
     });
   }
-})
+});
 
 master.get("/getAllMasterData", async (req, res) => {
   try {
-
-    const [latestInoviceNumber] = await database.query(`SELECT invoiceNum FROM masterTable ORDER BY invoiceNum DESC LIMIT 1`);
+    const [latestInoviceNumber] = await database.query(
+      `SELECT invoiceNum FROM masterTable ORDER BY invoiceNum DESC LIMIT 1`
+    );
 
     const [response] = await database.query(`SELECT * FROM masterTable`);
 
     return res.status(200).json({
       message: "success",
       data: response,
-      latestInovice : latestInoviceNumber[0].invoiceNum
+      latestInovice: latestInoviceNumber[0].invoiceNum,
     });
   } catch (error) {
     return res.status(500).json({
@@ -472,6 +470,142 @@ master.get("/getmasterDatabyid", async (req, res) => {
       message: "success",
       data: response[0],
     });
+  } catch (error) {
+    return res.status(500).json({
+      message: error.message,
+    });
+  }
+});
+
+// add data via csv
+
+master.post("/addDataviacsv", upload.single("fileData"), async (req, res) => {
+  try {
+    const fileData = req.file?.path;
+
+    if (!fileData) {
+      return res.status(401).json({
+        message: "file is required",
+      });
+    }
+
+    const rowdata = [];
+
+    fs.createReadStream(fileData)
+      .pipe(
+        csv({
+          mapHeaders: ({ header }) => header.trim(), // This trims spaces from header names
+        })
+      )
+      .on("data", (row) => {
+        const data = {
+          dateofBooking: row["dateofBooking"] || "",
+          dateOfJourney: row["dateOfJourney"] || "",
+          invoiceNum: row["invoiceNum"] || "",
+          passengerName: row["passengerName"] || "",
+          paymentParty: row["paymenamtbyclient"] || "",
+
+          systemRef: row["systemRef"] || "",
+          vendor: row["vendor"] || "",
+          service: row["service"] || "",
+          description: row["description"] || "",
+          PNR: row["PNR"] || "",
+          depCity: row["depCity"] || "",
+          arrCity: row["arrCity"] || "",
+          netAmount: row["netAmount"]
+            ? parseFloat(row["netAmount"].replace(/,/g, ""))
+            : 0,
+          markup: row["markup"]
+            ? parseFloat(row["markup"].replace(/,/g, ""))
+            : 0,
+          gst: row["gst"] ? parseFloat(row["gst"].replace(/,/g, "")) : 0,
+
+          totalAmount: row["totalAmount"]
+            ? parseFloat(row["totalAmount"].replace(/,/g, ""))
+            : 0,
+          modeOfPayment: row["modeOfPayment"] || "",
+          status: row["status"] || "Pending",
+          refundDate: row["refundDate"] || "",
+          refundAmount: row["refundAmount"]
+            ? parseFloat(row["refundAmount"].replace(/,/g, ""))
+            : 0,
+          refundMode: row["refundMode"] || "",
+        };
+
+        if (row["invoiceNum"] && row["invoiceNum"] !== "") {
+          rowdata.push(data);
+        }
+      })
+
+      .on("end", async () => {
+        if (rowdata.length === 0) {
+          return res.status(400).json({
+            message: "No valid data to insert",
+          });
+        }
+
+        await database.query(
+          `
+      INSERT INTO masterTable (
+        dateofBooking,
+        dateOfJourney,
+        invoiceNum,
+        passengerName,
+        paymenamtbyclient,
+        systemRef,
+        vendor,
+        service,
+        description,
+        PNR,
+        depCity,
+        arrCity,
+        netAmount,
+        markup,
+        gst,
+        totalAmount,
+        modeOfPayment,
+        status,
+        refundDate,
+        refundAmount,
+        refundMode
+      ) VALUES ?
+      `,
+          [
+            rowdata.map((data) => [
+              data.dateofBooking,
+              data.dateOfJourney,
+              data.invoiceNum,
+              data.passengerName,
+              data.paymenamtbyclient,
+              data.systemRef,
+              data.vendor,
+              data.service,
+              data.description,
+              data.PNR,
+              data.depCity,
+              data.arrCity,
+              data.netAmount,
+              data.markup,
+              data.gst,
+              data.totalAmount,
+              data.modeOfPayment,
+              data.status,
+              data.refundDate,
+              data.refundAmount,
+              data.refundMode,
+            ]),
+          ]
+        );
+
+        return res.status(201).json({
+          message: "success",
+          data: rowdata,
+        });
+      })
+
+      .on("error", (err) => {
+        return res.status(500).json({ message: err.message });
+      });
   } catch (error) {
     return res.status(500).json({
       message: error.message,
