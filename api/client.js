@@ -7,11 +7,11 @@ client.post("/add", async (req, res) => {
   try {
     const { name, contact, email, gstnum, address } = req.body;
 
-    if (!name || !contact || !email || !address) {
-      return res.status(401).json({
-        message: "all fileds are required",
-      });
-    }
+    // if (!name || !contact || !email || !address) {
+    //   return res.status(401).json({
+    //     message: "all fileds are required",
+    //   });
+    // }
 
     const [response] = await database.query(
       `INSERT INTO clients (name,contact,email,gstnum,address) VALUES (?,?,?,?,?)`,

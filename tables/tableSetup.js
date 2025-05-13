@@ -2,19 +2,19 @@ import { database } from "../db/config.js";
 
 const clientTable = `CREATE TABLE IF NOT EXISTS clients (
     id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    contact VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
+    name VARCHAR(255) ,
+    contact VARCHAR(255) ,
+    email VARCHAR(255) ,
     gstnum VARCHAR(255),
-    address TEXT NOT NULL
+    address TEXT 
 );
 `;
 
 const vendorTable = `CREATE TABLE IF NOT EXISTS vendors (
     id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    contact VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
+    name VARCHAR(255) ,
+    contact VARCHAR(255) ,
+    email VARCHAR(255) ,
     gstnum VARCHAR(255) 
 )`;
 

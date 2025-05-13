@@ -7,11 +7,11 @@ vendor.post("/add", async (req, res) => {
   try {
     const { name, contact, email, gstnum } = req.body;
 
-    if (!name || !contact || !email) {
-      return res.status(401).json({
-        message: "all fileds are required",
-      });
-    }
+    // if (!name || !contact || !email) {
+    //   return res.status(401).json({
+    //     message: "all fileds are required",
+    //   });
+    // }
 
     await database.query(
       `INSERT INTO vendors (name,contact,email,gstnum) VALUES (?,?,?,?)`,
