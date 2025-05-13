@@ -29,7 +29,7 @@ master.post("/add", async (req, res) => {
       nextInvoiceNum = `${prefix}/${newNumber}`;
     }
 
-    console.log("Next Invoice Number:", nextInvoiceNum);
+
     const {
       status,
       dateofBooking,
