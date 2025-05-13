@@ -32,9 +32,9 @@ master.post("/add", async (req, res) => {
 
     const {
       status,
+
       dateofBooking,
       dateOfJourney,
-      modeOfPayment,
       service,
       description,
       PNR,
@@ -53,7 +53,6 @@ master.post("/add", async (req, res) => {
       modeOfPaymentForClient,
       paymentdatebyclient,
       paymenamtbyclient,
-      amount,
       refundDate,
       refundAmount,
       cancelCharge,
@@ -64,7 +63,6 @@ master.post("/add", async (req, res) => {
       !status ||
       !dateofBooking ||
       !dateOfJourney ||
-      !modeOfPayment ||
       !service ||
       !systemRef ||
       !vendor ||
@@ -83,7 +81,6 @@ master.post("/add", async (req, res) => {
       invoiceNum,
       dateofBooking,
       dateOfJourney,
-      modeOfPayment,
       service,
       description,
       PNR,
@@ -100,19 +97,17 @@ master.post("/add", async (req, res) => {
       gst,
       totalAmount,
       modeOfPaymentForClient,
-        paymentdatebyclient,
+      paymentdatebyclient,
       paymenamtbyclient,
-      amount,
       refundDate,
       refundAmount,
       cancelCharge,
       refundMode) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         status,
-        nextInvoiceNum,
+         nextInvoiceNum,
         dateofBooking,
         dateOfJourney,
-        modeOfPayment,
         service,
         description,
         PNR,
@@ -131,7 +126,7 @@ master.post("/add", async (req, res) => {
         modeOfPaymentForClient,
         paymentdatebyclient,
         paymenamtbyclient,
-        amount,
+
         refundDate,
         refundAmount,
         cancelCharge,
@@ -156,7 +151,7 @@ master.post("/addInvoice", async (req, res) => {
       invoiceNum,
       dateofBooking,
       dateOfJourney,
-      modeOfPayment,
+    
       service,
       description,
       PNR,
@@ -175,7 +170,7 @@ master.post("/addInvoice", async (req, res) => {
       modeOfPaymentForClient,
       paymentdatebyclient,
       paymenamtbyclient,
-      amount,
+ 
       refundDate,
       refundAmount,
       cancelCharge,
@@ -187,15 +182,15 @@ master.post("/addInvoice", async (req, res) => {
       !invoiceNum ||
       !dateofBooking ||
       !dateOfJourney ||
-      !modeOfPayment ||
+
       !service ||
       !systemRef ||
       !vendor ||
       !passengerName ||
       !netAmount ||
       !markup ||
-      !totalAmount ||
-      !amount
+      !totalAmount 
+
     ) {
       return res.status(401).json({
         message: "all fileds are required",
@@ -207,7 +202,7 @@ master.post("/addInvoice", async (req, res) => {
       invoiceNum,
       dateofBooking,
       dateOfJourney,
-      modeOfPayment,
+
       service,
       description,
       PNR,
@@ -226,7 +221,7 @@ master.post("/addInvoice", async (req, res) => {
       modeOfPaymentForClient,
         paymentdatebyclient,
       paymenamtbyclient,
-      amount,
+ 
       refundDate,
       refundAmount,
       cancelCharge,
@@ -236,7 +231,7 @@ master.post("/addInvoice", async (req, res) => {
         invoiceNum,
         dateofBooking,
         dateOfJourney,
-        modeOfPayment,
+
         service,
         description,
         PNR,
@@ -255,7 +250,7 @@ master.post("/addInvoice", async (req, res) => {
         modeOfPaymentForClient,
         paymentdatebyclient,
         paymenamtbyclient,
-        amount,
+  
         refundDate,
         refundAmount,
         cancelCharge,
@@ -301,7 +296,7 @@ master.put("/editMasterData", async (req, res) => {
       invoiceNum,
       dateofBooking,
       dateOfJourney,
-      modeOfPayment,
+
       service,
       description,
       PNR,
@@ -320,7 +315,7 @@ master.put("/editMasterData", async (req, res) => {
       modeOfPaymentForClient,
       paymentdatebyclient,
       paymenamtbyclient,
-      amount,
+
       refundDate,
       refundAmount,
       cancelCharge,
@@ -338,15 +333,15 @@ master.put("/editMasterData", async (req, res) => {
       !dateofBooking ||
       !invoiceNum ||
       !dateOfJourney ||
-      !modeOfPayment ||
+   
       !service ||
       !systemRef ||
       !vendor ||
       !passengerName ||
       !netAmount ||
       !markup ||
-      !totalAmount ||
-      !amount
+      !totalAmount 
+ 
     ) {
       return res.status(401).json({
         message: "all fileds are required",
@@ -358,7 +353,7 @@ master.put("/editMasterData", async (req, res) => {
       invoiceNum=?,
       dateofBooking=?,
       dateOfJourney=?,
-      modeOfPayment=?,
+
       service=?,
       description=?,
       PNR=?,
@@ -377,7 +372,7 @@ master.put("/editMasterData", async (req, res) => {
       modeOfPaymentForClient=?,
         paymentdatebyclient=?,
       paymenamtbyclient=?,
-      amount=?,
+
       refundDate=?,
       refundAmount=?,
       cancelCharge=?,
@@ -387,7 +382,7 @@ master.put("/editMasterData", async (req, res) => {
         invoiceNum,
         dateofBooking,
         dateOfJourney,
-        modeOfPayment,
+
         service,
         description,
         PNR,
@@ -406,7 +401,7 @@ master.put("/editMasterData", async (req, res) => {
         modeOfPaymentForClient,
         paymentdatebyclient,
         paymenamtbyclient,
-        amount,
+
         refundDate,
         refundAmount,
         cancelCharge,
@@ -522,7 +517,7 @@ master.post("/addDataviacsv", upload.single("fileData"), async (req, res) => {
           totalAmount: row["totalAmount"]
             ? parseFloat(row["totalAmount"].replace(/,/g, ""))
             : 0,
-          modeOfPayment: row["modeOfPayment"] || "",
+          modeOfPaymentForClient: row["modeOfPayment"] || "",
           status: row["status"] || "Pending",
           refundDate: row["refundDate"] || "",
           refundAmount: row["refundAmount"]
@@ -562,7 +557,7 @@ master.post("/addDataviacsv", upload.single("fileData"), async (req, res) => {
         markup,
         gst,
         totalAmount,
-        modeOfPayment,
+        modeOfPaymentForClient,
         status,
         refundDate,
         refundAmount,
@@ -587,7 +582,7 @@ master.post("/addDataviacsv", upload.single("fileData"), async (req, res) => {
               data.markup,
               data.gst,
               data.totalAmount,
-              data.modeOfPayment,
+              data.modeOfPaymentForClient,
               data.status,
               data.refundDate,
               data.refundAmount,
