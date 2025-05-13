@@ -71,8 +71,7 @@ master.post("/add", async (req, res) => {
       !passengerName ||
       !netAmount ||
       !markup ||
-      !totalAmount ||
-      !amount
+      !totalAmount
     ) {
       return res.status(401).json({
         message: "all fileds are required",
