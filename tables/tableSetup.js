@@ -63,6 +63,12 @@ const userTable = `CREATE TABLE IF NOT EXISTS users (
   createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )`;
 
+
+const modePayments = `CREATE TABLE IF NOT EXISTS modePayments (
+  id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL UNIQUE
+)`;
+
 // tables
 const tableSetup = async (table, query) => {
   try {
@@ -80,6 +86,7 @@ const createTables = async () => {
   await tableSetup("supportingData", supportingDataTable);
   await tableSetup("masterTable", masterTable);
   await tableSetup("user", userTable);
+  await tableSetup("modePayments", modePayments);
   console.log("Tables created");
 };
 
