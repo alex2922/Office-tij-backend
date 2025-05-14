@@ -14,7 +14,7 @@ modePayment.post("/add", async (req, res) => {
     // }
 
     const [response] = await database.query(
-      `INSERT INTO modePayments (name) VALUES ?`,
+      `INSERT INTO modePayments (name) VALUES (?)`,
       [name]
     );
 
