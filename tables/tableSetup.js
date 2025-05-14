@@ -46,6 +46,7 @@ const masterTable = `CREATE TABLE IF NOT EXISTS masterTable (
     markup DECIMAL(10,2) NOT NULL,
     gst DECIMAL(10,2),
     totalAmount DECIMAL(10,2) NOT NULL,
+    modeOfPayment VARCHAR(255) DEFAULT NULL,
     modeOfPaymentForClient VARCHAR(255),
     paymentdatebyclient VARCHAR(255),
     paymenamtbyclient DECIMAL(10,2) ,
