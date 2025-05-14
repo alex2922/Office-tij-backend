@@ -9,6 +9,7 @@ import { client } from "./api/client.js";
 import { vendor } from "./api/vendor.js";
 import { master } from "./api/master.js";
 import { supportingData } from "./api/supportingData.js";
+import { modePayment } from "./api/modePayment.js";
 dotenv.config();
 
 const app = express();
@@ -21,6 +22,7 @@ app.use("/api/user", userLogin);
 app.use("/api/client", client);
 app.use("/api/vendor", vendor);
 app.use("/api/master", master);
+app.use("/api/payments",modePayment )
 app.use("/api/supportingData", supportingData);
 
 try {
