@@ -9,30 +9,29 @@ export const master = express.Router();
 
 master.post("/add", async (req, res) => {
   try {
-    const prefix = await invoiceNumber();
+    // const prefix = await invoiceNumber();
 
-    const [rows] = await database.query(
-      `SELECT invoiceNum FROM masterTable 
-       WHERE invoiceNum LIKE '${prefix}/%' 
-       ORDER BY invoiceNum DESC LIMIT 1`
-    );
+    // const [rows] = await database.query(
+    //   `SELECT invoiceNum FROM masterTable
+    //    WHERE invoiceNum LIKE '${prefix}/%'
+    //    ORDER BY invoiceNum DESC LIMIT 1`
+    // );
 
-    let nextInvoiceNum;
+    // let nextInvoiceNum;
 
-    if (rows.length === 0) {
-      // No invoice for this financial year, start at 001
-      nextInvoiceNum = `${prefix}/001`;
-    } else {
-      const latestInvoice = rows[0].invoiceNum;
-      const lastNumber = parseInt(latestInvoice.split("/")[1]); // Extract number part
-      const newNumber = String(lastNumber + 1).padStart(3, "0");
-      nextInvoiceNum = `${prefix}/${newNumber}`;
-    }
-
+    // if (rows.length === 0) {
+    //   // No invoice for this financial year, start at 001
+    //   nextInvoiceNum = `${prefix}/001`;
+    // } else {
+    //   const latestInvoice = rows[0].invoiceNum;
+    //   const lastNumber = parseInt(latestInvoice.split("/")[1]); // Extract number part
+    //   const newNumber = String(lastNumber + 1).padStart(3, "0");
+    //   nextInvoiceNum = `${prefix}/${newNumber}`;
+    // }
 
     const {
       status,
-
+      invoiceNum,
       dateofBooking,
       dateOfJourney,
       service,
@@ -107,7 +106,7 @@ master.post("/add", async (req, res) => {
       refundMode) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
         status,
-         nextInvoiceNum,
+        invoiceNum,
         dateofBooking,
         dateOfJourney,
         service,
@@ -154,7 +153,7 @@ master.post("/addInvoice", async (req, res) => {
       invoiceNum,
       dateofBooking,
       dateOfJourney,
-    
+
       service,
       description,
       PNR,
@@ -174,7 +173,7 @@ master.post("/addInvoice", async (req, res) => {
       modeOfPaymentForClient,
       paymentdatebyclient,
       paymenamtbyclient,
- 
+
       refundDate,
       refundAmount,
       cancelCharge,
@@ -186,15 +185,13 @@ master.post("/addInvoice", async (req, res) => {
       !invoiceNum ||
       !dateofBooking ||
       !dateOfJourney ||
-
       !service ||
       !systemRef ||
       !vendor ||
       !passengerName ||
       !netAmount ||
       !markup ||
-      !totalAmount 
-
+      !totalAmount
     ) {
       return res.status(401).json({
         message: "all fileds are required",
@@ -256,7 +253,7 @@ master.post("/addInvoice", async (req, res) => {
         modeOfPaymentForClient,
         paymentdatebyclient,
         paymenamtbyclient,
-  
+
         refundDate,
         refundAmount,
         cancelCharge,
@@ -274,17 +271,57 @@ master.post("/addInvoice", async (req, res) => {
   }
 });
 
+master.get("/getAllYear", async (req, res) => {
+  try {
+    const [response] = await database.query(`SELECT * FROM masterTable`);
+
+    const years = [
+      ...new Set(
+        response
+          .map((item) => {
+            const match = item.invoiceNum.match(/\d{4}-\d{4}/);
+
+            return match ? match[0] : null;
+          })
+          .filter(Boolean)
+      ),
+    ];
+
+    return res.status(200).json({
+      message: "successfully",
+      data: years,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+
 master.get("/getAllMasterData", async (req, res) => {
   try {
+    const { year } = req.query;
+
+    if (!year) {
+      return res.status(401).json({
+        message: "year is required",
+      });
+    }
+
     const [latestInoviceNumber] = await database.query(
       `SELECT invoiceNum FROM masterTable ORDER BY invoiceNum DESC LIMIT 1`
     );
 
     const [response] = await database.query(`SELECT * FROM masterTable`);
 
+    const filterdData = response.filter((item) =>
+      item.invoiceNum.includes(year)
+    );
+
     return res.status(200).json({
       message: "success",
-      data: response,
+      // data: response,
+      filterdData: filterdData,
       latestInovice: latestInoviceNumber[0].invoiceNum,
     });
   } catch (error) {
@@ -340,15 +377,13 @@ master.put("/editMasterData", async (req, res) => {
       !dateofBooking ||
       !invoiceNum ||
       !dateOfJourney ||
-   
       !service ||
       !systemRef ||
       !vendor ||
       !passengerName ||
       !netAmount ||
       !markup ||
-      !totalAmount 
- 
+      !totalAmount
     ) {
       return res.status(401).json({
         message: "all fileds are required",
