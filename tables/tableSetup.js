@@ -63,10 +63,18 @@ const userTable = `CREATE TABLE IF NOT EXISTS users (
   createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )`;
 
-
 const modePayments = `CREATE TABLE IF NOT EXISTS modePayments (
   id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
   name VARCHAR(255) NOT NULL UNIQUE
+)`;
+
+const documents = `CREATE TABLE IF NOT EXISTS documents (
+
+id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
+masterId INT NOT NULL,
+ticket VARCHAR(255) NOT NULL,
+boardingPass VARCHAR(255) NOT NULL,
+FOREIGN KEY (masterId) REFERENCES masterTable(id) ON DELETE CASCADE
 )`;
 
 // tables
@@ -87,6 +95,7 @@ const createTables = async () => {
   await tableSetup("masterTable", masterTable);
   await tableSetup("user", userTable);
   await tableSetup("modePayments", modePayments);
+  await tableSetup("documents", documents);
   console.log("Tables created");
 };
 

@@ -5,7 +5,7 @@ import path from "path";
 
 const storage = multer.diskStorage({
     destination:(req,file,cb)=>{
-        const uploadPath = "D:/jungle_boosh";
+       const uploadPath = "/var/www/images/tij-invoice";    
         if(!fs.existsSync(uploadPath)){
             fs.mkdirSync(uploadPath,{recursive:true})
         }

@@ -7,77 +7,82 @@ import upload from "../multer.js";
 
 export const master = express.Router();
 
-master.post("/add", async (req, res) => {
-  try {
-    // const prefix = await invoiceNumber();
+master.post(
+  "/add",
+  upload.fields([
+    {
+      name: "ticket",
+      maxCount: 1,
+    },
+    {
+      name: "boardingPass",
+      maxCount: 1,
+    },
+  ]),
+  async (req, res) => {
+    try {
+      let connection;
 
-    // const [rows] = await database.query(
-    //   `SELECT invoiceNum FROM masterTable
-    //    WHERE invoiceNum LIKE '${prefix}/%'
-    //    ORDER BY invoiceNum DESC LIMIT 1`
-    // );
+      connection = await database.getConnection();
 
-    // let nextInvoiceNum;
+      await connection.beginTransaction();
+      const parsedData = JSON.parse(req.body.parsedData);
+      const {
+        status,
+        invoiceNum,
+        dateofBooking,
+        dateOfJourney,
+        service,
+        description,
+        PNR,
+        systemRef,
+        vendor,
+        vendorGST,
+        depCity,
+        arrCity,
+        passengerName,
+        paymentParty,
+        travelType,
+        netAmount,
+        markup,
+        gst,
+        totalAmount,
+        modeOfPayment,
+        modeOfPaymentForClient,
+        paymentdatebyclient,
+        paymenamtbyclient,
+        refundDate,
+        refundAmount,
+        cancelCharge,
+        refundMode,
+      } = parsedData;
 
-    // if (rows.length === 0) {
-    //   // No invoice for this financial year, start at 001
-    //   nextInvoiceNum = `${prefix}/001`;
-    // } else {
-    //   const latestInvoice = rows[0].invoiceNum;
-    //   const lastNumber = parseInt(latestInvoice.split("/")[1]); // Extract number part
-    //   const newNumber = String(lastNumber + 1).padStart(3, "0");
-    //   nextInvoiceNum = `${prefix}/${newNumber}`;
-    // }
+      const ticket =
+        `https://diwise.cloud/tij-invoice/${req.files?.ticket?.[0]?.filename}` ||
+        null;
+      const boardingPass =
+        `https://diwise.cloud/tij-invoice/${req.files?.boardingPass?.[0]?.filename}` ||
+        null;
 
-    const {
-      status,
-      invoiceNum,
-      dateofBooking,
-      dateOfJourney,
-      service,
-      description,
-      PNR,
-      systemRef,
-      vendor,
-      vendorGST,
-      depCity,
-      arrCity,
-      passengerName,
-      paymentParty,
-      travelType,
-      netAmount,
-      markup,
-      gst,
-      totalAmount,
-      modeOfPayment,
-      modeOfPaymentForClient,
-      paymentdatebyclient,
-      paymenamtbyclient,
-      refundDate,
-      refundAmount,
-      cancelCharge,
-      refundMode,
-    } = req.body;
+      if (
+        !status ||
+        !dateofBooking ||
+        !dateOfJourney ||
+        !service ||
+        !systemRef ||
+        !vendor ||
+        !passengerName ||
+        !netAmount ||
+        !markup ||
+        !totalAmount
+      ) {
+        return res.status(401).json({
+          message: "all fileds are required",
+        });
+      }
 
-    if (
-      !status ||
-      !dateofBooking ||
-      !dateOfJourney ||
-      !service ||
-      !systemRef ||
-      !vendor ||
-      !passengerName ||
-      !netAmount ||
-      !markup ||
-      !totalAmount
-    ) {
-      return res.status(401).json({
-        message: "all fileds are required",
-      });
-    }
-
-    await database.query(
-      `INSERT INTO masterTable (status,
+      const [response] = await connection.query(
+        `INSERT INTO masterTable (status,
       invoiceNum,
       dateofBooking,
       dateOfJourney,
@@ -104,50 +109,66 @@ master.post("/add", async (req, res) => {
       refundAmount,
       cancelCharge,
       refundMode) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-      [
-        status,
-        invoiceNum,
-        dateofBooking,
-        dateOfJourney,
-        service,
-        description,
-        PNR,
-        systemRef,
-        vendor,
-        vendorGST,
-        depCity,
-        arrCity,
-        passengerName,
-        paymentParty,
-        travelType,
-        netAmount,
-        markup,
-        gst,
-        totalAmount,
-        modeOfPayment,
-        modeOfPaymentForClient,
-        paymentdatebyclient,
-        paymenamtbyclient,
+        [
+          status,
+          invoiceNum,
+          dateofBooking,
+          dateOfJourney,
+          service,
+          description,
+          PNR,
+          systemRef,
+          vendor,
+          vendorGST,
+          depCity,
+          arrCity,
+          passengerName,
+          paymentParty,
+          travelType,
+          netAmount,
+          markup,
+          gst,
+          totalAmount,
+          modeOfPayment,
+          modeOfPaymentForClient,
+          paymentdatebyclient,
+          paymenamtbyclient,
 
-        refundDate,
-        refundAmount,
-        cancelCharge,
-        refundMode,
-      ]
-    );
+          refundDate,
+          refundAmount,
+          cancelCharge,
+          refundMode,
+        ]
+      );
 
-    return res.status(201).json({
-      message: "client added successfully",
-    });
-  } catch (error) {
-    return res.status(500).json({
-      message: error.message,
-    });
+      const imageQuery = `INSERT INTO documents (masterId,ticket,boardingPass) VALUES (?,?,?)`;
+      const values = [response.insertId, ticket, boardingPass];
+
+      await connection.query(imageQuery, values);
+      await connection.commit();
+      connection.release();
+
+      return res.status(201).json({
+        message: "client added successfully",
+      });
+    } catch (error) {
+      return res.status(500).json({
+        message: error.message,
+      });
+    }
   }
-});
+);
 
 master.post("/addInvoice", async (req, res) => {
   try {
+    let connection;
+
+    connection = await database.getConnection();
+
+    await connection.beginTransaction();
+
+    const parsedData = JSON.parse(req.body.parsedData);
+
     const {
       status,
       invoiceNum,
@@ -178,7 +199,7 @@ master.post("/addInvoice", async (req, res) => {
       refundAmount,
       cancelCharge,
       refundMode,
-    } = req.body;
+    } = parsedData;
 
     if (
       !status ||
@@ -198,7 +219,14 @@ master.post("/addInvoice", async (req, res) => {
       });
     }
 
-    await database.query(
+    const ticket =
+      `https://diwise.cloud/tij-invoice/${req.files?.ticket?.[0]?.filename}` ||
+      null;
+    const boardingPass =
+      `https://diwise.cloud/tij-invoice/${req.files?.boardingPass?.[0]?.filename}` ||
+      null;
+
+    const [response] = await database.query(
       `INSERT INTO masterTable (status,
       invoiceNum,
       dateofBooking,
@@ -261,6 +289,13 @@ master.post("/addInvoice", async (req, res) => {
       ]
     );
 
+    const imageQuery = `INSERT INTO documents (masterId,ticket,boardingPass) VALUES (?,?,?)`;
+    const values = [response.insertId, ticket, boardingPass];
+
+    await connection.query(imageQuery, values);
+    await connection.commit();
+    connection.release();
+
     return res.status(201).json({
       message: "client added successfully",
     });
@@ -300,7 +335,7 @@ master.get("/getAllYear", async (req, res) => {
 
 master.get("/getAllMasterData", async (req, res) => {
   try {
-    const { year } = req.query;
+    const { year } = req.body;
 
     if (!year) {
       return res.status(401).json({
@@ -312,7 +347,44 @@ master.get("/getAllMasterData", async (req, res) => {
       `SELECT invoiceNum FROM masterTable ORDER BY invoiceNum DESC LIMIT 1`
     );
 
-    const [response] = await database.query(`SELECT * FROM masterTable`);
+    const [response] = await database.query(`SELECT 
+  masterTable.id AS masterId,
+  masterTable.entryCreatedOn,
+  masterTable.status,
+  masterTable.invoiceNum,
+  masterTable.dateofBooking,
+  masterTable.dateOfJourney,
+  masterTable.service,
+  masterTable.description,
+  masterTable.PNR,
+  masterTable.systemRef,
+  masterTable.vendor,
+  masterTable.vendorGST,
+  masterTable.depCity,
+  masterTable.arrCity,
+  masterTable.passengerName,
+  masterTable.paymentParty,
+  masterTable.travelType,
+  masterTable.netAmount,
+  masterTable.markup,
+  masterTable.gst,
+  masterTable.totalAmount,
+  masterTable.modeOfPayment,
+  masterTable.modeOfPaymentForClient,
+  masterTable.paymentdatebyclient,
+  masterTable.paymenamtbyclient,
+  masterTable.refundDate,
+  masterTable.refundAmount,
+  masterTable.cancelCharge,
+  masterTable.refundMode,
+
+  documents.id AS documentId,
+  documents.ticket,
+  documents.boardingPass
+FROM masterTable
+LEFT JOIN documents 
+ON masterTable.id = documents.masterId
+`);
 
     const filterdData = response.filter((item) =>
       item.invoiceNum.includes(year)
@@ -331,96 +403,24 @@ master.get("/getAllMasterData", async (req, res) => {
   }
 });
 
-master.put("/editMasterData", async (req, res) => {
-  try {
-    const { masterId } = req.query;
-    const {
-      status,
-      invoiceNum,
-      dateofBooking,
-      dateOfJourney,
+master.put(
+  "/editMasterData",
+  upload.fields([
+    { name: "ticket", maxCount: 1 },
+    { name: "boardingPass", maxCount: 1 },
+  ]),
+  async (req, res) => {
+    try {
+      const { masterId } = req.query;
+      let connection;
 
-      service,
-      description,
-      PNR,
-      systemRef,
-      vendor,
-      vendorGST,
-      depCity,
-      arrCity,
-      passengerName,
-      paymentParty,
-      travelType,
-      netAmount,
-      markup,
-      gst,
-      totalAmount,
-      modeOfPayment,
-      modeOfPaymentForClient,
-      paymentdatebyclient,
-      paymenamtbyclient,
+      connection = await database.getConnection();
 
-      refundDate,
-      refundAmount,
-      cancelCharge,
-      refundMode,
-    } = req.body;
+      await connection.beginTransaction();
 
-    if (!masterId) {
-      return res.status(401).json({
-        message: "masterId is required",
-      });
-    }
+      const parsedData = JSON.parse(req.body.parsedData);
 
-    if (
-      !status ||
-      !dateofBooking ||
-      !invoiceNum ||
-      !dateOfJourney ||
-      !service ||
-      !systemRef ||
-      !vendor ||
-      !passengerName ||
-      !netAmount ||
-      !markup ||
-      !totalAmount
-    ) {
-      return res.status(401).json({
-        message: "all fileds are required",
-      });
-    }
-
-    const response = await database.query(
-      `UPDATE masterTable SET status=?,
-      invoiceNum=?,
-      dateofBooking=?,
-      dateOfJourney=?,
-
-      service=?,
-      description=?,
-      PNR=?,
-      systemRef=?,
-      vendor=?,
-      vendorGST=?,
-      depCity=?,
-      arrCity=?,
-      passengerName=?,
-      paymentParty=?,
-      travelType=?,
-      netAmount=?,
-      markup=?,
-      gst=?,
-      totalAmount=?,
-      modeOfPayment=?,
-      modeOfPaymentForClient=?,
-        paymentdatebyclient=?,
-      paymenamtbyclient=?,
-
-      refundDate=?,
-      refundAmount=?,
-      cancelCharge=?,
-      refundMode=? WHERE id=?`,
-      [
+      const {
         status,
         invoiceNum,
         dateofBooking,
@@ -450,20 +450,133 @@ master.put("/editMasterData", async (req, res) => {
         refundAmount,
         cancelCharge,
         refundMode,
-        masterId,
-      ]
-    );
+      } = parsedData;
 
-    return res.status(201).json({
-      message: "master data updated successfully",
-      // data: response[0],
-    });
-  } catch (error) {
-    return res.status(500).json({
-      message: error.message,
-    });
+      if (!masterId) {
+        return res.status(401).json({
+          message: "masterId is required",
+        });
+      }
+
+      if (
+        !status ||
+        !dateofBooking ||
+        !invoiceNum ||
+        !dateOfJourney ||
+        !service ||
+        !systemRef ||
+        !vendor ||
+        !passengerName ||
+        !netAmount ||
+        !markup ||
+        !totalAmount
+      ) {
+        return res.status(401).json({
+          message: "all fileds are required",
+        });
+      }
+
+      // Step 1: Get existing ticket & boardingPass from DB
+      const [existingDoc] = await connection.query(
+        "SELECT ticket, boardingPass, id FROM documents WHERE masterId = ?",
+        [masterId]
+      );
+
+      const existingTicket = existingDoc[0]?.ticket || null;
+      const existingBoardingPass = existingDoc[0]?.boardingPass || null;
+      const documentId = existingDoc[0]?.id;
+
+      // Step 2: Use new file if provided, else fallback to existing
+      const ticket = req.files?.ticket?.[0]?.filename
+        ? `https://diwise.cloud/tij-invoice/${req.files.ticket[0].filename}`
+        : existingTicket;
+
+      const boardingPass = req.files?.boardingPass?.[0]?.filename
+        ? `https://diwise.cloud/tij-invoice/${req.files.boardingPass[0].filename}`
+        : existingBoardingPass;
+
+      const response = await database.query(
+        `UPDATE masterTable SET status=?,
+      invoiceNum=?,
+      dateofBooking=?,
+      dateOfJourney=?,
+
+      service=?,
+      description=?,
+      PNR=?,
+      systemRef=?,
+      vendor=?,
+      vendorGST=?,
+      depCity=?,
+      arrCity=?,
+      passengerName=?,
+      paymentParty=?,
+      travelType=?,
+      netAmount=?,
+      markup=?,
+      gst=?,
+      totalAmount=?,
+      modeOfPayment=?,
+      modeOfPaymentForClient=?,
+        paymentdatebyclient=?,
+      paymenamtbyclient=?,
+
+      refundDate=?,
+      refundAmount=?,
+      cancelCharge=?,
+      refundMode=? WHERE id=?`,
+        [
+          status,
+          invoiceNum,
+          dateofBooking,
+          dateOfJourney,
+
+          service,
+          description,
+          PNR,
+          systemRef,
+          vendor,
+          vendorGST,
+          depCity,
+          arrCity,
+          passengerName,
+          paymentParty,
+          travelType,
+          netAmount,
+          markup,
+          gst,
+          totalAmount,
+          modeOfPayment,
+          modeOfPaymentForClient,
+          paymentdatebyclient,
+          paymenamtbyclient,
+
+          refundDate,
+          refundAmount,
+          cancelCharge,
+          refundMode,
+          masterId,
+        ]
+      );
+
+      const imageQuery = `UPDATE documents SET ticket = ?, boardingPass = ? WHERE masterId = ?`;
+      const values = [ticket, boardingPass, masterId];
+
+      await connection.query(imageQuery, values);
+      await connection.commit();
+      connection.release();
+
+      return res.status(201).json({
+        message: "master data updated successfully",
+        // data: response[0],
+      });
+    } catch (error) {
+      return res.status(500).json({
+        message: error.message,
+      });
+    }
   }
-});
+);
 
 master.delete("/deleteMasterData", async (req, res) => {
   try {
@@ -494,7 +607,43 @@ master.get("/getmasterDatabyid", async (req, res) => {
     }
 
     const [response] = await database.query(
-      `SELECT * FROM masterTable WHERE id=?`,
+      `SELECT 
+  masterTable.id AS masterId,
+  masterTable.entryCreatedOn,
+  masterTable.status,
+  masterTable.invoiceNum,
+  masterTable.dateofBooking,
+  masterTable.dateOfJourney,
+  masterTable.service,
+  masterTable.description,
+  masterTable.PNR,
+  masterTable.systemRef,
+  masterTable.vendor,
+  masterTable.vendorGST,
+  masterTable.depCity,
+  masterTable.arrCity,
+  masterTable.passengerName,
+  masterTable.paymentParty,
+  masterTable.travelType,
+  masterTable.netAmount,
+  masterTable.markup,
+  masterTable.gst,
+  masterTable.totalAmount,
+  masterTable.modeOfPayment,
+  masterTable.modeOfPaymentForClient,
+  masterTable.paymentdatebyclient,
+  masterTable.paymenamtbyclient,
+  masterTable.refundDate,
+  masterTable.refundAmount,
+  masterTable.cancelCharge,
+  masterTable.refundMode,
+
+  documents.id AS documentId,
+  documents.ticket,
+  documents.boardingPass
+FROM masterTable
+LEFT JOIN documents 
+ON masterTable.id = documents.masterId WHERE masterTable.id=?`,
       [masterId]
     );
 
