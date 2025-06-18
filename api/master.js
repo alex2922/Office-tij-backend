@@ -159,7 +159,16 @@ master.post(
   }
 );
 
-master.post("/addInvoice", async (req, res) => {
+master.post("/addInvoice",upload.fields([
+    {
+      name: "ticket",
+      maxCount: 1,
+    },
+    {
+      name: "boardingPass",
+      maxCount: 1,
+    },
+  ]), async (req, res) => {
   try {
     let connection;
 
