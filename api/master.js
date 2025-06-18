@@ -335,7 +335,7 @@ master.get("/getAllYear", async (req, res) => {
 
 master.get("/getAllMasterData", async (req, res) => {
   try {
-    const { year } = req.body;
+    const { year } = req.query;
 
     if (!year) {
       return res.status(401).json({
