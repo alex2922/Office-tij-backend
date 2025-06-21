@@ -244,13 +244,6 @@ master.post(
         });
       }
 
-      const ticket =
-        `https://diwise.cloud/tij-invoice/${req.files?.ticket?.[0]?.filename}` ||
-        null;
-      const boardingPass =
-        `https://diwise.cloud/tij-invoice/${req.files?.boardingPass?.[0]?.filename}` ||
-        null;
-
       const [response] = await database.query(
         `INSERT INTO masterTable (status,
       invoiceNum,
@@ -314,8 +307,21 @@ master.post(
         ]
       );
 
-      const imageQuery = `INSERT INTO documents (masterId,ticket,boardingPass) VALUES (?,?,?)`;
-      const values = [response.insertId, ticket, boardingPass];
+      const masterId = response.insertId;
+
+      const ticketUrl = req.files?.ticket?.[0]?.filename
+        ? `https://diwise.cloud/tij-invoice/${req.files.ticket[0].filename}`
+        : null;
+
+      const boardingPassUrl = req.files?.boardingPass?.[0]?.filename
+        ? `https://diwise.cloud/tij-invoice/${req.files.boardingPass[0].filename}`
+        : null;
+
+      // Always insert a row into `documents` with default null values
+      await connection.query(
+        `INSERT INTO documents (masterId, ticket, boardingPass) VALUES (?, ?, ?)`,
+        [masterId, ticketUrl, boardingPassUrl]
+      );
 
       await connection.query(imageQuery, values);
       await connection.commit();
