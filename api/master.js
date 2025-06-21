@@ -4,6 +4,7 @@ import { invoiceNumber } from "../middleware/newInvoiceNum.js";
 import fs from "fs";
 import csv from "csv-parser";
 import upload from "../multer.js";
+import path from "path";
 
 export const master = express.Router();
 
@@ -610,16 +611,46 @@ master.put(
   }
 );
 
+
+
 master.delete("/deleteMasterData", async (req, res) => {
   try {
     const { masterId } = req.query;
 
-    const [response] = await database.query(
-      `DELETE FROM masterTable WHERE id =?`,
+    // Get document file names before deletion
+    const [getDoc] = await database.query(
+      `SELECT ticket, boardingPass FROM documents WHERE masterId = ?`,
       [masterId]
     );
+
+    // Delete from database
+    await database.query(`DELETE FROM documents WHERE masterId = ?`, [masterId]);
+    await database.query(`DELETE FROM masterTable WHERE id = ?`, [masterId]);
+
+    // Remove files from VPS folder
+    if (getDoc.length > 0) {
+      getDoc.forEach((doc) => {
+        const ticketPath = path.join(__dirname, "/var/www/images/tij-invoice", doc.ticket);
+        const boardingPassPath = path.join(__dirname, "/var/www/images/tij-invoice", doc.boardingPass);
+
+        // Check and delete ticket
+        if (doc.ticket && fs.existsSync(ticketPath)) {
+          fs.unlink(ticketPath, (err) => {
+            if (err) console.error("Error deleting ticket:", err);
+          });
+        }
+
+        // Check and delete boarding pass
+        if (doc.boardingPass && fs.existsSync(boardingPassPath)) {
+          fs.unlink(boardingPassPath, (err) => {
+            if (err) console.error("Error deleting boarding pass:", err);
+          });
+        }
+      });
+    }
+
     return res.status(201).json({
-      message: "deleted successfully",
+      message: "Deleted successfully",
     });
   } catch (error) {
     return res.status(500).json({
@@ -627,6 +658,7 @@ master.delete("/deleteMasterData", async (req, res) => {
     });
   }
 });
+
 
 master.get("/getmasterDatabyid", async (req, res) => {
   try {
