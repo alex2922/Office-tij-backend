@@ -141,18 +141,23 @@ master.post(
         ]
       );
 
-      if(req.files?.ticket?.[0]?.filename){
-        await connection.query(
-          `INSERT INTO documents (masterId, ticket) VALUES (?,?)`,
-          [response.insertId, ticket]
-        );
-      }
-      if(req.files?.boardingPass?.[0]?.filename){
-        await connection.query(
-          `INSERT INTO documents (masterId, boardingPass) VALUES (?,?)`,
-          [response.insertId, boardingPass]
-        );
-      }
+      // After inserting into masterTable
+      const masterId = response.insertId;
+
+      const ticketUrl = req.files?.ticket?.[0]?.filename
+        ? `https://diwise.cloud/tij-invoice/${req.files.ticket[0].filename}`
+        : null;
+
+      const boardingPassUrl = req.files?.boardingPass?.[0]?.filename
+        ? `https://diwise.cloud/tij-invoice/${req.files.boardingPass[0].filename}`
+        : null;
+
+      // Always insert a row into `documents` with default null values
+      await connection.query(
+        `INSERT INTO documents (masterId, ticket, boardingPass) VALUES (?, ?, ?)`,
+        [masterId, ticketUrl, boardingPassUrl]
+      );
+
       await connection.commit();
       connection.release();
 
@@ -167,7 +172,9 @@ master.post(
   }
 );
 
-master.post("/addInvoice",upload.fields([
+master.post(
+  "/addInvoice",
+  upload.fields([
     {
       name: "ticket",
       maxCount: 1,
@@ -176,104 +183,18 @@ master.post("/addInvoice",upload.fields([
       name: "boardingPass",
       maxCount: 1,
     },
-  ]), async (req, res) => {
-  try {
-    let connection;
+  ]),
+  async (req, res) => {
+    try {
+      let connection;
 
-    connection = await database.getConnection();
+      connection = await database.getConnection();
 
-    await connection.beginTransaction();
+      await connection.beginTransaction();
 
-    const parsedData = JSON.parse(req.body.parsedData);
+      const parsedData = JSON.parse(req.body.parsedData);
 
-    const {
-      status,
-      invoiceNum,
-      dateofBooking,
-      dateOfJourney,
-
-      service,
-      description,
-      PNR,
-      systemRef,
-      vendor,
-      vendorGST,
-      depCity,
-      arrCity,
-      passengerName,
-      paymentParty,
-      travelType,
-      netAmount,
-      markup,
-      gst,
-      totalAmount,
-      modeOfPayment,
-      modeOfPaymentForClient,
-      paymentdatebyclient,
-      paymenamtbyclient,
-
-      refundDate,
-      refundAmount,
-      cancelCharge,
-      refundMode,
-    } = parsedData;
-
-    if (
-      !status ||
-      !invoiceNum ||
-      !dateofBooking ||
-      !dateOfJourney ||
-      !service ||
-      !systemRef ||
-      !vendor ||
-      !passengerName ||
-      !netAmount ||
-      !markup ||
-      !totalAmount
-    ) {
-      return res.status(401).json({
-        message: "all fileds are required",
-      });
-    }
-
-    const ticket =
-      `https://diwise.cloud/tij-invoice/${req.files?.ticket?.[0]?.filename}` ||
-      null;
-    const boardingPass =
-      `https://diwise.cloud/tij-invoice/${req.files?.boardingPass?.[0]?.filename}` ||
-      null;
-
-    const [response] = await database.query(
-      `INSERT INTO masterTable (status,
-      invoiceNum,
-      dateofBooking,
-      dateOfJourney,
-
-      service,
-      description,
-      PNR,
-      systemRef,
-      vendor,
-      vendorGST,
-      depCity,
-      arrCity,
-      passengerName,
-      paymentParty,
-      travelType,
-      netAmount,
-      markup,
-      gst,
-      totalAmount,
-      modeOfPayment,
-      modeOfPaymentForClient,
-        paymentdatebyclient,
-      paymenamtbyclient,
- 
-      refundDate,
-      refundAmount,
-      cancelCharge,
-      refundMode) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-      [
+      const {
         status,
         invoiceNum,
         dateofBooking,
@@ -303,25 +224,113 @@ master.post("/addInvoice",upload.fields([
         refundAmount,
         cancelCharge,
         refundMode,
-      ]
-    );
+      } = parsedData;
 
-    const imageQuery = `INSERT INTO documents (masterId,ticket,boardingPass) VALUES (?,?,?)`;
-    const values = [response.insertId, ticket, boardingPass];
+      if (
+        !status ||
+        !invoiceNum ||
+        !dateofBooking ||
+        !dateOfJourney ||
+        !service ||
+        !systemRef ||
+        !vendor ||
+        !passengerName ||
+        !netAmount ||
+        !markup ||
+        !totalAmount
+      ) {
+        return res.status(401).json({
+          message: "all fileds are required",
+        });
+      }
 
-    await connection.query(imageQuery, values);
-    await connection.commit();
-    connection.release();
+      const ticket =
+        `https://diwise.cloud/tij-invoice/${req.files?.ticket?.[0]?.filename}` ||
+        null;
+      const boardingPass =
+        `https://diwise.cloud/tij-invoice/${req.files?.boardingPass?.[0]?.filename}` ||
+        null;
 
-    return res.status(201).json({
-      message: "client added successfully",
-    });
-  } catch (error) {
-    return res.status(500).json({
-      message: error.message,
-    });
+      const [response] = await database.query(
+        `INSERT INTO masterTable (status,
+      invoiceNum,
+      dateofBooking,
+      dateOfJourney,
+
+      service,
+      description,
+      PNR,
+      systemRef,
+      vendor,
+      vendorGST,
+      depCity,
+      arrCity,
+      passengerName,
+      paymentParty,
+      travelType,
+      netAmount,
+      markup,
+      gst,
+      totalAmount,
+      modeOfPayment,
+      modeOfPaymentForClient,
+        paymentdatebyclient,
+      paymenamtbyclient,
+ 
+      refundDate,
+      refundAmount,
+      cancelCharge,
+      refundMode) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        [
+          status,
+          invoiceNum,
+          dateofBooking,
+          dateOfJourney,
+
+          service,
+          description,
+          PNR,
+          systemRef,
+          vendor,
+          vendorGST,
+          depCity,
+          arrCity,
+          passengerName,
+          paymentParty,
+          travelType,
+          netAmount,
+          markup,
+          gst,
+          totalAmount,
+          modeOfPayment,
+          modeOfPaymentForClient,
+          paymentdatebyclient,
+          paymenamtbyclient,
+
+          refundDate,
+          refundAmount,
+          cancelCharge,
+          refundMode,
+        ]
+      );
+
+      const imageQuery = `INSERT INTO documents (masterId,ticket,boardingPass) VALUES (?,?,?)`;
+      const values = [response.insertId, ticket, boardingPass];
+
+      await connection.query(imageQuery, values);
+      await connection.commit();
+      connection.release();
+
+      return res.status(201).json({
+        message: "client added successfully",
+      });
+    } catch (error) {
+      return res.status(500).json({
+        message: error.message,
+      });
+    }
   }
-});
+);
 
 master.get("/getAllYear", async (req, res) => {
   try {
