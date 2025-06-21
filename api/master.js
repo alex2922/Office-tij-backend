@@ -141,10 +141,18 @@ master.post(
         ]
       );
 
-      const imageQuery = `INSERT INTO documents (masterId,ticket,boardingPass) VALUES (?,?,?)`;
-      const values = [response.insertId, ticket, boardingPass];
-
-      await connection.query(imageQuery, values);
+      if(req.files?.ticket?.[0]?.filename){
+        await connection.query(
+          `INSERT INTO documents (masterId, ticket) VALUES (?,?)`,
+          [response.insertId, ticket]
+        );
+      }
+      if(req.files?.boardingPass?.[0]?.filename){
+        await connection.query(
+          `INSERT INTO documents (masterId, boardingPass) VALUES (?,?)`,
+          [response.insertId, boardingPass]
+        );
+      }
       await connection.commit();
       connection.release();
 
