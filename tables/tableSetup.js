@@ -72,8 +72,8 @@ const documents = `CREATE TABLE IF NOT EXISTS documents (
 
 id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
 masterId INT NOT NULL,
-ticket VARCHAR(255) NOT NULL,
-boardingPass VARCHAR(255) NOT NULL,
+ticket VARCHAR(255),
+boardingPass VARCHAR(255),
 FOREIGN KEY (masterId) REFERENCES masterTable(id) ON DELETE CASCADE
 )`;
 
