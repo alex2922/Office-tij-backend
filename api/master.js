@@ -617,30 +617,34 @@ master.delete("/deleteMasterData", async (req, res) => {
   try {
     const { masterId } = req.query;
 
-    // Get document file names before deletion
+    if (!masterId) {
+      return res.status(400).json({ message: "masterId is required" });
+    }
+
+    // 1. Get file names from DB
     const [getDoc] = await database.query(
       `SELECT ticket, boardingPass FROM documents WHERE masterId = ?`,
       [masterId]
     );
 
-    // Delete from database
+    // 2. Delete from DB
     await database.query(`DELETE FROM documents WHERE masterId = ?`, [masterId]);
     await database.query(`DELETE FROM masterTable WHERE id = ?`, [masterId]);
 
-    // Remove files from VPS folder
+    // 3. Delete files from server
     if (getDoc.length > 0) {
       getDoc.forEach((doc) => {
-        const ticketPath = path.join(__dirname, "/var/www/images/tij-invoice", doc.ticket);
-        const boardingPassPath = path.join(__dirname, "/var/www/images/tij-invoice", doc.boardingPass);
+        const ticketPath = `/var/www/images/tij-invoice/${doc.ticket}`;
+        const boardingPassPath = `/var/www/images/tij-invoice/${doc.boardingPass}`;
 
-        // Check and delete ticket
+        // Delete ticket if exists
         if (doc.ticket && fs.existsSync(ticketPath)) {
           fs.unlink(ticketPath, (err) => {
             if (err) console.error("Error deleting ticket:", err);
           });
         }
 
-        // Check and delete boarding pass
+        // Delete boardingPass if exists
         if (doc.boardingPass && fs.existsSync(boardingPassPath)) {
           fs.unlink(boardingPassPath, (err) => {
             if (err) console.error("Error deleting boarding pass:", err);
@@ -649,15 +653,14 @@ master.delete("/deleteMasterData", async (req, res) => {
       });
     }
 
-    return res.status(201).json({
-      message: "Deleted successfully",
-    });
+    return res.status(201).json({ message: "Deleted successfully" });
+
   } catch (error) {
-    return res.status(500).json({
-      message: error.message,
-    });
+    console.error("Delete Error:", error);
+    return res.status(500).json({ message: error.message });
   }
 });
+
 
 
 master.get("/getmasterDatabyid", async (req, res) => {
