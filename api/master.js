@@ -324,7 +324,7 @@ master.post(
         [masterId, ticketUrl, boardingPassUrl]
       );
 
-      await connection.query(imageQuery, values);
+
       await connection.commit();
       connection.release();
 

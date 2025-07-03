@@ -12,6 +12,7 @@ const storage = multer.diskStorage({
 
         cb(null,uploadPath)
     },
+    
 
     filename:(req,file,cb)=>{
         const customFilename = file.originalname.split(".")[0];
