@@ -2,7 +2,6 @@ import express from "express";
 import { database } from "../db/config.js";
 
 export const vendor = express.Router();
-
 vendor.post("/add", async (req, res) => {
   try {
     const { name, contact, email, gstnum } = req.body;
